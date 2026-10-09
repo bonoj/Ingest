@@ -1,0 +1,10 @@
+{
+  "id": "cb158ce9-5309-450d-b886-6ff4e139b0b1",
+  "observed_at": "2026-10-09T10:36:55.812Z",
+  "source": "crossing-01",
+  "build_sha": "jit",
+  "scene": "crossing",
+  "observations": {
+    "note": "Crossing test: the observer saw a marble."
+  }
+}
