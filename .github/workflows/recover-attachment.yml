@@ -29,7 +29,7 @@ jobs:
           api=f"https://api.github.com/repos/{os.environ['GITHUB_REPOSITORY']}/issues/{issue}"
           headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json','User-Agent':'crossing-recovery'}
           body=json.load(urllib.request.urlopen(urllib.request.Request(api,headers=headers)))['body']
-          urls=re.findall(r'https://github\.com/user-attachments/files/[0-9]+/[^\s)]+',body)
+          urls=re.findall(r'https://github\.com/user-attachments/(?:files/[0-9]+/[^\s)]+|assets/[A-Za-z0-9_-]+)',body or '')
           if not urls:
               print('No attachment URL in issue; nothing to recover')
               
