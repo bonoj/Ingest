@@ -39,7 +39,7 @@ jobs:
           with urllib.request.urlopen(req,timeout=60) as response:
               data=response.read()
               typ=response.headers.get('Content-Type','')
-          if len(data)<1048576: raise SystemExit(f'Not a >1 MiB attachment: {len(data)} bytes; content-type={typ}')
+          if not data: raise SystemExit('Empty attachment; nothing to recover')
           p=pathlib.Path('recovered')/f'issue-{issue}.bin'
           p.parent.mkdir(exist_ok=True)
           p.write_bytes(data)
