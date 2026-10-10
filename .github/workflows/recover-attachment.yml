@@ -48,6 +48,10 @@ jobs:
           chunk_bytes=49152
           for i in range(0,len(data),chunk_bytes):
               (shards/f'{i//chunk_bytes:05d}.b64').write_text(base64.b64encode(data[i:i+chunk_bytes]).decode('ascii')+'\n')
+          rebuilt=b''.join(base64.b64decode(f.read_text(),validate=False) for f in sorted(shards.glob('*.b64')))
+          assert rebuilt==data, 'Shard reconstruction differs from source bytes'
+          assert hashlib.sha256(rebuilt).digest()==hashlib.sha256(data).digest()
+          print('VERIFIED: shard reconstruction byte-identical, SHA-256='+hashlib.sha256(rebuilt).hexdigest())
           meta={'issue':int(issue),'source_url':url,'bytes':len(data),'sha256':hashlib.sha256(data).hexdigest(),'content_type':typ,'chunk_bytes':49152,'chunks':(len(data)+49151)//49152}
           p.with_suffix('.json').write_text(json.dumps(meta,indent=2)+'\n')
           print(json.dumps(meta))
