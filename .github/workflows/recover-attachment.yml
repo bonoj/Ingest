@@ -24,7 +24,7 @@ jobs:
         run: |
           set -euo pipefail
           python3 - <<'PY'
-          import os,json,re,urllib.request,hashlib,pathlib
+          import os,json,re,urllib.request,hashlib,pathlib,base64
           issue=os.environ['ISSUE']
           api=f"https://api.github.com/repos/{os.environ['GITHUB_REPOSITORY']}/issues/{issue}"
           headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json','User-Agent':'crossing-recovery'}
@@ -43,7 +43,12 @@ jobs:
           p=pathlib.Path('recovered')/f'issue-{issue}.bin'
           p.parent.mkdir(exist_ok=True)
           p.write_bytes(data)
-          meta={'issue':int(issue),'source_url':url,'bytes':len(data),'sha256':hashlib.sha256(data).hexdigest(),'content_type':typ}
+          shards=pathlib.Path('recovered')/f'issue-{issue}-chunks'
+          shards.mkdir(exist_ok=True)
+          chunk_bytes=49152
+          for i in range(0,len(data),chunk_bytes):
+              (shards/f'{i//chunk_bytes:05d}.b64').write_text(base64.b64encode(data[i:i+chunk_bytes]).decode('ascii')+'\n')
+          meta={'issue':int(issue),'source_url':url,'bytes':len(data),'sha256':hashlib.sha256(data).hexdigest(),'content_type':typ,'chunk_bytes':49152,'chunks':(len(data)+49151)//49152}
           p.with_suffix('.json').write_text(json.dumps(meta,indent=2)+'\n')
           print(json.dumps(meta))
           PY
