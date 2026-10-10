@@ -3,5 +3,7 @@
   "source_url": "https://github.com/user-attachments/assets/08a96f2b-f5f6-42ad-965e-4ea59268050c",
   "bytes": 3006275,
   "sha256": "1bfd5224647d6f1891a8867efe9eef5c2c752a3b1ed288eccfb36f349edaf9c8",
-  "content_type": "image/png"
+  "content_type": "image/png",
+  "chunk_bytes": 49152,
+  "chunks": 62
 }
