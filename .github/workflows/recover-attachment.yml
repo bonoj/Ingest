@@ -1,0 +1,51 @@
+name: Recover issue attachment
+on:
+  workflow_dispatch:
+    inputs:
+      issue:
+        description: Issue number
+        required: true
+        default: '2'
+permissions:
+  contents: write
+  issues: read
+jobs:
+  recover:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Recover exact attachment
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE: ${{ inputs.issue }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import os,json,re,urllib.request,hashlib,pathlib
+          issue=os.environ['ISSUE']
+          api=f"https://api.github.com/repos/{os.environ['GITHUB_REPOSITORY']}/issues/{issue}"
+          headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json','User-Agent':'crossing-recovery'}
+          body=json.load(urllib.request.urlopen(urllib.request.Request(api,headers=headers)))['body']
+          urls=re.findall(r'https://github\.com/user-attachments/files/[0-9]+/[^\s)]+',body)
+          if not urls: raise SystemExit('No attachment URL in issue')
+          url=urls[0]
+          req=urllib.request.Request(url,headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'User-Agent':'crossing-recovery'})
+          with urllib.request.urlopen(req,timeout=60) as response:
+              data=response.read()
+              typ=response.headers.get('Content-Type','')
+          if len(data)<1048576: raise SystemExit(f'Not a >1 MiB attachment: {len(data)} bytes; content-type={typ}')
+          p=pathlib.Path('recovered')/f'issue-{issue}.bin'
+          p.parent.mkdir(exist_ok=True)
+          p.write_bytes(data)
+          meta={'issue':int(issue),'source_url':url,'bytes':len(data),'sha256':hashlib.sha256(data).hexdigest(),'content_type':typ}
+          p.with_suffix('.json').write_text(json.dumps(meta,indent=2)+'\n')
+          print(json.dumps(meta))
+          PY
+      - name: Commit recovered bytes
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add recovered/
+          git commit -m "Recover issue attachment" 
+          git push
